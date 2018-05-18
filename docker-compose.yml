@@ -1,0 +1,54 @@
+version: '2'
+services:
+  master:
+    container_name: master
+    image: docker.io/osrf/ros:kinetic-desktop-full
+    environment:
+      - ROS_HOSTNAME=master
+    command: roscore
+
+  create2_teleop:
+    container_name: create2_teleop
+    image: osrf/ros:create2
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/input/js0:/dev/input/js0
+    links:
+      - master
+    environment:
+      - DISPLAY=unix$DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - ROS_HOSTNAME=create2_teleop
+      - ROS_MASTER_URI=http://master:11311
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /home/spctx310b/.ros:/root/.ros
+    command: /bin/bash -c "source /root/create_ws/devel/setup.bash; roslaunch ca_tools joy_teleop.launch [joy_config:=xbox360]"
+
+  create2_driver:
+    container_name: create2_driver
+    image: osrf/ros:create2
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/input/js0:/dev/input/js0
+    links:
+      - master
+    environment:
+      - DISPLAY=unix$DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - ROS_HOSTNAME=create2_driver
+      - ROS_MASTER_URI=http://master:11311
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /home/spctx310b/.ros:/root/.ros
+    command: /bin/bash -c "source /root/create_ws/devel/setup.bash; roslaunch ca_driver create_2.launch"
+
+  check1:
+    container_name: check1
+    image: docker.io/osrf/ros:kinetic-desktop-full
+    links:
+      - master
+    environment:
+      - ROS_HOSTNAME=check1
+      - ROS_MASTER_URI=http://master:11311
+    command: /bin/bash -c "rostopic pub -1 /undock std_msgs/Empty"
